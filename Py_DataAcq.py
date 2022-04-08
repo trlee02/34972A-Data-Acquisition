@@ -3,6 +3,7 @@ from lib2to3.pgen2.token import RPAR
 from queue import Empty
 import pyvisa
 import PySimpleGUI as sg
+import _3497xA
 
 # SCPI Documentation here
 # https://documentation.help/Keysight-34970A-34972A/Welcome.htm
@@ -84,7 +85,7 @@ def assign_functions(active_channels):
         
         
         
-
+dmm = _3497xA("34972A")
 window = sg.Window('Test', layout).Finalize()
 # window.Maximize()
 # Event Loop to process "events" and get the "values" of the inputs
@@ -116,8 +117,8 @@ while True:
         
         print(channel_list)
         print(scan_list)
-        print(dc_volts)
         # configure all channels in functions
+
 
 
 
