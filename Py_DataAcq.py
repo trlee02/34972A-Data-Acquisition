@@ -1,4 +1,5 @@
 from faulthandler import disable
+from lib2to3.pgen2.token import RPAR
 from queue import Empty
 import pyvisa
 import PySimpleGUI as sg
@@ -48,27 +49,8 @@ layout = [
 ]
 
 scan_list = '(@'
-dc_volts = '(@'
-ac_volts = '(@'
-freq = '(@'
-period = '(@'
-ohms = '(@'
-ohms_4W = '(@'
-temp = '(@'
-dc_cur = '(@'
-ac_cur = '(@'
 
-channel_list = [
-    dc_volts,
-    ac_volts,
-    freq,
-    period,
-    ohms,
-    ohms_4W,
-    temp,
-    dc_cur,
-    ac_cur
-]
+channel_list = ['']*9
 
 function_list = [
     'DC Volts',
@@ -83,7 +65,9 @@ function_list = [
 ]
 
 
-
+def replace_last(source_string, replace_what, replace_with):
+    head, _sep, tail = source_string.rpartition(replace_what)
+    return head + replace_with + tail
 
 def assign_functions(active_channels):
     channels = active_channels.splitlines()
@@ -91,6 +75,12 @@ def assign_functions(active_channels):
         for idx, function in enumerate(function_list):
             if function in a_channel:
                 channel_list[idx] += a_channel.split(':',1)[1] + ','
+
+    for idx, list in enumerate(channel_list):
+        # if list == '(@':
+        #     list = ''
+        channel_list[idx] = (list[:-1] if list[-1]==',' else list) + ')'
+        
         
         
         
@@ -123,7 +113,10 @@ while True:
         # Read the channel list
         # Assign channels to functions
         assign_functions(values["CHANNEL LIST"])
+        
         print(channel_list)
+        print(scan_list)
+        print(dc_volts)
         # configure all channels in functions
 
 
