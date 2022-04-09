@@ -3,7 +3,7 @@ from lib2to3.pgen2.token import RPAR
 from queue import Empty
 import pyvisa
 import PySimpleGUI as sg
-import _3497xA
+from _3497xA import _3497xA
 
 # SCPI Documentation here
 # https://documentation.help/Keysight-34970A-34972A/Welcome.htm
@@ -19,6 +19,7 @@ def comb_list(lists):
 # rm = pyvisa.ResourceManager()
 # DMM = rm.open_resource('TCPIP0::169.254.208.22::inst0::INSTR')
 
+# GUI setup
 sg.theme('Dark Grey 3')
 channel_column = [
     [sg.Text("Channel", size=(10,1)), sg.InputText(size=(12, 1), key='CHANNEL')],
@@ -36,7 +37,9 @@ channel_column = [
 results_column = [
     [sg.Text("Results")],
     [sg.Multiline(size=(40, 10), key='RESULTS', disabled=True)],
-    [sg.Button('START', size=(36, 1), key='START')]
+    [sg.Button('START', size=(20, 1), key='START'), sg.Button('CLEAR RESULTS', size=(15,1), key=('CLR RESULTS'))],
+    [sg.Multiline(size=(40,5), key='CMD LINE')],
+    [sg.Button('RUN', size=(37,1), key='RUN')]
 ]
 
 
@@ -45,49 +48,17 @@ layout = [
         sg.Column(channel_column),
         sg.VSeparator(),
         sg.Column(results_column)
-    ],
-
-]
-
-scan_list = '(@'
-
-channel_list = ['']*9
-
-function_list = [
-    'DC Volts',
-    'AC Volts',
-    'Frequency',
-    'Period',
-    'Ohms',
-    'Ohm 4W',
-    'Temperature',
-    'DC Current',
-    'AC Current'
+    ]
 ]
 
 
-def replace_last(source_string, replace_what, replace_with):
-    head, _sep, tail = source_string.rpartition(replace_what)
-    return head + replace_with + tail
-
-def assign_functions(active_channels):
-    channels = active_channels.splitlines()
-    for a_channel in channels:
-        for idx, function in enumerate(function_list):
-            if function in a_channel:
-                channel_list[idx] += a_channel.split(':',1)[1] + ','
-
-    for idx, list in enumerate(channel_list):
-        # if list == '(@':
-        #     list = ''
-        channel_list[idx] = (list[:-1] if list[-1]==',' else list) + ')'
-        
-        
-        
-        
 dmm = _3497xA("34972A")
+
 window = sg.Window('Test', layout).Finalize()
-# window.Maximize()
+
+
+# All commands right now are shown as print('COMMAND') right now to simulate real commands to the DMM 
+
 # Event Loop to process "events" and get the "values" of the inputs
 while True:
     event, values = window.read()
@@ -97,27 +68,30 @@ while True:
         if values['CHANNEL LIST']:
             window['CHANNEL LIST'].update(
                 f"{values['CHANNEL LIST']}\n{values['FUNCTION']}:{values['CHANNEL']}") # Display new Channel
-            scan_list += values['CHANNEL'] + ',' # append new channel to scan list
+            dmm.addChannel(values['CHANNEL'], values['FUNCTION'])
         else:
             window['CHANNEL LIST'].update(
                 f"{values['FUNCTION']}:{values['CHANNEL']}")
             scan_list += values['CHANNEL'] + ','
+            dmm.addChannel(values['CHANNEL'], values['FUNCTION']) 
     elif event == 'CLEAR':
         window['CHANNEL LIST'].update('')
+        dmm.clearChannels()
+        print(dmm.channel_list)
         scan_list='(@'
     elif event == 'START':
         if not values['RESULTS']:
-            window['RESULTS'].update(f"{values['RESULTS']}\nHello There!")
+            window['RESULTS'].update(f"{values['RESULTS']}\n{dmm.run()}")
+            print(dmm.run())
         else: 
             window['RESULTS'].update("Hello There!")
     elif event == 'CONFIG':
-        # Read the channel list
-        # Assign channels to functions
-        assign_functions(values["CHANNEL LIST"])
-        
-        print(channel_list)
-        print(scan_list)
-        # configure all channels in functions
+        print(dmm.configure())
+        print(dmm.scan())
+    elif event == 'SET':
+        print(dmm.trigConfig(values['NUM TRIGS'], values['INTERVAL']))
+    elif event == 'RUN':
+        print(values['RUN'])
 
 
 
