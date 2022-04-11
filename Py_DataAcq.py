@@ -4,23 +4,31 @@ from queue import Empty
 import pyvisa
 import PySimpleGUI as sg
 from _3497xA import _3497xA
+from typing import List
+import time
+import re
 
 # SCPI Documentation here
 # https://documentation.help/Keysight-34970A-34972A/Welcome.htm
 
 
 def com(command):
-    DMM.write(command)
+    instr.write(command)
+
 
 
 def comb_list(lists):
     return f'(@{",".join(lists)})'
 
-# rm = pyvisa.ResourceManager()
-# DMM = rm.open_resource('TCPIP0::169.254.208.22::inst0::INSTR')
+rm = pyvisa.ResourceManager()
+instr = rm.open_resource('TCPIP0::169.254.9.72::inst0::INSTR')
+instr.timeout = 10000
+instr.write('INST:DMM ON')
+instr.write('*RST')
+instr.write('FORMAT:READING:CHAN ON')
 
 # GUI setup
-sg.theme('Dark Grey 3')
+sg.theme('Material1')
 channel_column = [
     [sg.Text("Channel", size=(10,1)), sg.InputText(size=(12, 1), key='CHANNEL')],
     [sg.Text("Function", size=(10,1)), sg.InputText(size=(12, 1), key='FUNCTION')],
@@ -36,10 +44,10 @@ channel_column = [
 
 results_column = [
     [sg.Text("Results")],
-    [sg.Multiline(size=(40, 10), key='RESULTS', disabled=True)],
-    [sg.Button('START', size=(20, 1), key='START'), sg.Button('CLEAR RESULTS', size=(15,1), key=('CLR RESULTS'))],
-    [sg.Multiline(size=(40,5), key='CMD LINE')],
-    [sg.Button('RUN', size=(37,1), key='RUN')]
+    [sg.Multiline(size=(60, 10), key='RESULTS', disabled=True)],
+    [sg.Button('START', size=(37, 1), key='START'), sg.Button('CLEAR RESULTS', size=(15,1), key=('CLR RESULTS'))],
+    [sg.Multiline(size=(60,5), key='CMD LINE')],
+    [sg.Button('RUN', size=(54,1), key='RUN')]
 ]
 
 
@@ -50,6 +58,21 @@ layout = [
         sg.Column(results_column)
     ]
 ]
+
+def formatResults(results: str, channels: List[str]) -> str:
+    temp_results = tuple(results.split(sep=','))
+    paired_results = tuple(temp_results[x:x + 2] for x in range(0, len(temp_results), 2))
+
+    channels.sort()
+    chl_results = dict.fromkeys(channels, '')
+    for pair in paired_results:
+        chl_results[pair[1]]  = f"{chl_results[pair[1]]},{pair[0]}"
+    
+    return '\n'.join([f"{funct}:\n {re.split('^,',result)[1]}" for funct, result in chl_results.items()])
+
+        
+        
+    # print(paired_results)
 
 
 dmm = _3497xA("34972A")
@@ -72,33 +95,35 @@ while True:
         else:
             window['CHANNEL LIST'].update(
                 f"{values['FUNCTION']}:{values['CHANNEL']}")
-            scan_list += values['CHANNEL'] + ','
             dmm.addChannel(values['CHANNEL'], values['FUNCTION']) 
     elif event == 'CLEAR':
         window['CHANNEL LIST'].update('')
         dmm.clearChannels()
         print(dmm.channel_list)
-        scan_list='(@'
     elif event == 'START':
         if not values['RESULTS']:
-            window['RESULTS'].update(f"{values['RESULTS']}\n{dmm.run()}")
-            print(dmm.run())
+            com(dmm.start())
+            com(dmm.fetch())
+            results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
+            window['RESULTS'].update(f"{results}")
         else: 
-            window['RESULTS'].update("Hello There!")
+            com(dmm.start())
+            com(dmm.fetch())
+            results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
+            window['RESULTS'].update(f"{values['RESULTS']}\n{results}")
+            
+            
     elif event == 'CONFIG':
+        com(dmm.configure())
+        com(dmm.scan())
         print(dmm.configure())
         print(dmm.scan())
     elif event == 'SET':
+        com(dmm.trigConfig(values['NUM TRIGS'], values['INTERVAL']))
         print(dmm.trigConfig(values['NUM TRIGS'], values['INTERVAL']))
     elif event == 'RUN':
-        print(values['RUN'])
-
-
-
-
-
-        
-
+        com(values['CMD LINE'])
+        print(values['CMD LINE'])
 
 window.close()
 
