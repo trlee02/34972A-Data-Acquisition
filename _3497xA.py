@@ -33,7 +33,7 @@ class _3497xA:
 
 
         self._scan_list = f'{self._scan_list[:-1]}'
-        return cmd
+        return f"{cmd}FORMAT:READING:CHAN ON\n"
 
     def scan(self) -> str:
         '''Returns SCPI command for preparing a scan on all active channels.'''
@@ -48,10 +48,15 @@ class _3497xA:
         )
 
     def start(self) -> str:
-        return f"FORMAT:READING:CHAN ON\n{CONST.INIT}"
+        return f"{CONST.INIT}"
 
     def fetch(self) -> str:
         return f"{CONST.FETCH}"
+
+    # def read(self, num_trig, trig_interval) -> str:
+    #     for i in range(0, num_trig):
+            
+
 
     @property
     def scan_list(self) -> str:

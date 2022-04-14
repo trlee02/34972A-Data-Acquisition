@@ -21,14 +21,15 @@ def comb_list(lists):
     return f'(@{",".join(lists)})'
 
 rm = pyvisa.ResourceManager()
-instr = rm.open_resource('TCPIP0::169.254.9.72::inst0::INSTR')
+# instr = rm.open_resource('TCPIP0::169.254.9.72::inst0::INSTR')
+instr = rm.open_resource('USB0::0x0957::0x2007::MY57003725::0::INSTR')
 instr.timeout = 10000
 instr.write('INST:DMM ON')
 instr.write('*RST')
 instr.write('FORMAT:READING:CHAN ON')
 
 # GUI setup
-sg.theme('Material1')
+sg.theme('DarkTeal12')
 channel_column = [
     [sg.Text("Channel", size=(10,1)), sg.InputText(size=(12, 1), key='CHANNEL')],
     [sg.Text("Function", size=(10,1)), sg.InputText(size=(12, 1), key='FUNCTION')],
@@ -46,6 +47,7 @@ results_column = [
     [sg.Text("Results")],
     [sg.Multiline(size=(60, 10), key='RESULTS', disabled=True)],
     [sg.Button('START', size=(37, 1), key='START'), sg.Button('CLEAR RESULTS', size=(15,1), key=('CLR RESULTS'))],
+    [sg.Button('READ', size=(54, 1), key='READ')],
     [sg.Multiline(size=(60,5), key='CMD LINE')],
     [sg.Button('RUN', size=(54,1), key='RUN')]
 ]
@@ -68,10 +70,7 @@ def formatResults(results: str, channels: List[str]) -> str:
     for pair in paired_results:
         chl_results[pair[1]]  = f"{chl_results[pair[1]]},{pair[0]}"
     
-    return '\n'.join([f"{funct}:\n {re.split('^,',result)[1]}" for funct, result in chl_results.items()])
-
-        
-        
+    return '\n'.join([f"{funct}:\t{re.split('^,',result)[1]}" for funct, result in chl_results.items()])
     # print(paired_results)
 
 
@@ -110,7 +109,7 @@ while True:
             com(dmm.start())
             com(dmm.fetch())
             results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
-            window['RESULTS'].update(f"{values['RESULTS']}\n{results}")
+            
             
             
     elif event == 'CONFIG':
@@ -124,6 +123,24 @@ while True:
     elif event == 'RUN':
         com(values['CMD LINE'])
         print(values['CMD LINE'])
+    
+    elif event == 'READ':
+        res = ''
+        for i in range(0, int(values['NUM TRIGS'])):
+            com(dmm.start())
+            com(dmm.fetch())
+            results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
+            
+            if values['RESULTS']:
+                print('HELLO')
+                res = (f"{res}\n{results}")
+                window['RESULTS'].update(f"{values['RESULTS']}\n{res}")
+            elif values:
+                res = (f"{results}")
+                window['RESULTS'].update(f"{res}")
+            window.read(timeout=0)
+            time.sleep(float(values["INTERVAL"]))
+
 
 window.close()
 
