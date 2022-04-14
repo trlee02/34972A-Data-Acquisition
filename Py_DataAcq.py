@@ -45,7 +45,7 @@ channel_column = [
 
 results_column = [
     [sg.Text("Results")],
-    [sg.Multiline(size=(60, 10), key='RESULTS', disabled=True)],
+    [sg.Multiline(size=(60, 10), key='RESULTS', disabled=True, autoscroll=True)],
     [sg.Button('START', size=(37, 1), key='START'), sg.Button('CLEAR RESULTS', size=(15,1), key=('CLR RESULTS'))],
     [sg.Button('READ', size=(54, 1), key='READ')],
     [sg.Multiline(size=(60,5), key='CMD LINE')],
@@ -125,18 +125,23 @@ while True:
         print(values['CMD LINE'])
     
     elif event == 'READ':
-        res = ''
+        filled = False
+        if not values['RESULTS']:
+            res = values['RESULTS']
+        else:
+            res = f"{values['RESULTS']}\n\n"
         for i in range(0, int(values['NUM TRIGS'])):
             com(dmm.start())
             com(dmm.fetch())
             results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
             
-            if values['RESULTS']:
-                print('HELLO')
-                res = (f"{res}\n{results}")
-                window['RESULTS'].update(f"{values['RESULTS']}\n{res}")
-            elif values:
-                res = (f"{results}")
+            if filled:
+                res = (f"{res}\n\n{results}")
+                window['RESULTS'].update(f"{res}")
+            else:
+                filled = True
+                res += (f"{results}")
+                
                 window['RESULTS'].update(f"{res}")
             window.read(timeout=0)
             time.sleep(float(values["INTERVAL"]))
