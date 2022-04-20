@@ -55,7 +55,16 @@ class _3497xA:
 
     # def read(self, num_trig, trig_interval) -> str:
     #     for i in range(0, num_trig):
-            
+    
+    def simulated_data(self):
+        list = self.scan_list.split(',')
+        result = ''
+        numba = 0.0001
+        for channel in list:
+            numba += 0.0001
+            result += f"{numba},{channel},"
+        
+        return re.split(',$',result)[0]
 
 
     @property

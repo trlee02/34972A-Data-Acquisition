@@ -103,27 +103,23 @@ while True:
         print(dmm.channel_list)
     elif event == 'START':
         if not values['RESULTS']:
-            com(dmm.start())
-            com(dmm.fetch())
-            results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
+            print(dmm.start())
+            print(dmm.fetch())
+            results = formatResults(dmm.simulated_data(), dmm.scan_list.split(','))
             window['RESULTS'].update(f"{results}")
         else: 
-            com(dmm.start())
-            com(dmm.fetch())
-            results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
+            print(dmm.start())
+            print(dmm.fetch())
+            results = formatResults(dmm.simulated_data(), dmm.scan_list.split(','))
             
             
             
     elif event == 'CONFIG':
-        com(dmm.configure())
-        com(dmm.scan())
         print(dmm.configure())
         print(dmm.scan())
     elif event == 'SET':
-        com(dmm.trigConfig(values['NUM TRIGS'], values['INTERVAL']))
         print(dmm.trigConfig(values['NUM TRIGS'], values['INTERVAL']))
     elif event == 'RUN':
-        com(values['CMD LINE'])
         print(values['CMD LINE'])
     
     elif event == 'READ':
@@ -133,9 +129,9 @@ while True:
         else:
             res = f"{values['RESULTS']}\n\n"
         for i in range(0, int(values['NUM TRIGS'])):
-            com(dmm.start())
-            com(dmm.fetch())
-            results = formatResults(instr.read()[:-1], dmm.scan_list.split(','))
+            print(dmm.start())
+            print(dmm.fetch())
+            results = formatResults(dmm.simulated_data(), dmm.scan_list.split(','))
             
             if filled:
                 res = (f"{res}\n\n{results}")
