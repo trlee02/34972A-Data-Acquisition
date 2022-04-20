@@ -22,11 +22,13 @@ def comb_list(lists):
 
 rm = pyvisa.ResourceManager()
 # instr = rm.open_resource('TCPIP0::169.254.9.72::inst0::INSTR')
-instr = rm.open_resource('USB0::0x0957::0x2007::MY57003725::0::INSTR')
-instr.timeout = 10000
-instr.write('INST:DMM ON')
-instr.write('*RST')
-instr.write('FORMAT:READING:CHAN ON')
+
+'''UNCOMMENT THIS'''
+# instr = rm.open_resource('USB0::0x0957::0x2007::MY57003725::0::INSTR')
+# instr.timeout = 10000
+# instr.write('INST:DMM ON')
+# instr.write('*RST')
+# instr.write('FORMAT:READING:CHAN ON')
 
 # GUI setup
 sg.theme('DarkTeal12')
